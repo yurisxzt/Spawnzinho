@@ -4,6 +4,7 @@ public class PlayerMovement : MonoBehaviour
 {
     public float speed = 5f;
     public float jumpForce = 7f;
+    public Transform cameraTransform;
 
     private Rigidbody rb;
     private bool isGrounded = true;
@@ -13,26 +14,40 @@ public class PlayerMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    void Update()
+    void FixedUpdate()
     {
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
 
-        Vector3 dir = new Vector3(h, 0, v) * speed;
-        Vector3 vel = new Vector3(dir.x, rb.linearVelocity.y, dir.z);
-        rb.linearVelocity = vel;
+        // direção baseada na câmera
+        Vector3 forward = cameraTransform.forward;
+        Vector3 right = cameraTransform.right;
 
-        // Pular somente se estiver no ch�o
+        forward.y = 0f;
+        right.y = 0f;
+
+        forward.Normalize();
+        right.Normalize();
+
+        Vector3 moveDir = (forward * v + right * h).normalized;
+
+        Vector3 velocity = moveDir * speed;
+        velocity.y = rb.linearVelocity.y; // <--- CORRETO
+
+        rb.linearVelocity = velocity;     // <--- CORRETO
+    }
+
+    void Update()
+    {
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-            isGrounded = false; // evita double jump
+            isGrounded = false;
         }
     }
 
-    void OnCollisionEnter(Collision collision)
+    void OnCollisionEnter(Collision col)
     {
-        // considera "ch�o" qualquer coisa com collider
         isGrounded = true;
     }
 }
